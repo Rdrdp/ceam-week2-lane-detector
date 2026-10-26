@@ -64,26 +64,50 @@ def apply_roi(img):
     return result
 
 # Run everything here
+
 if __name__ == "__main__":
-    # Create output folder if it doesn't exist
+    # Create the output folder if it doesn't exist
     if not os.path.exists("outputs"):
         os.makedirs("outputs")
+
+    input_folder = "test_images"
+    
+    # Get all file names inside test_images folder
+    all_files = os.listdir(input_folder)
+
+    # Filter to only pick image files
+    image_files = [f for f in all_files if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+
+    print(f"Found {len(image_files)} images to process.\n")
+
+    for filename in image_files:
+        image_path = os.path.join(input_folder, filename)
+        name_without_ext = os.path.splitext(filename)[0]
+
+        print(f"--> Processing: {filename}")
+
+        # Run the 5-step pipeline
+        img = load_image(image_path)
+        colors = filter_colors(img)
+        blurred = apply_blur(colors)
+        edges = detect_edges(blurred)
+        final_lanes = apply_roi(edges)
+
+        # Save all steps to outputs folder with the image's name
+        cv2.imwrite(f"outputs/{name_without_ext}_1_original.jpg", img)
+        cv2.imwrite(f"outputs/{name_without_ext}_2_colors.jpg", colors)
+        cv2.imwrite(f"outputs/{name_without_ext}_3_blurred.jpg", blurred)
+        cv2.imwrite(f"outputs/{name_without_ext}_4_edges.jpg", edges)
+        cv2.imwrite(f"outputs/{name_without_ext}_5_final_lanes.jpg", final_lanes)
+
+        # Show the final result on screen
+        cv2.imshow(f"Final Lanes - {filename}", final_lanes)
+        print("    Press any key (or Enter) on the image window to continue to the next image...")
         
-    image_path = "test_images/solidWhiteRight.jpg"
-    print("Running pipeline on:", image_path)
-    
-    # Run the steps one by one
-    img = load_image(image_path)
-    colors = filter_colors(img)
-    blurred = apply_blur(colors)
-    edges = detect_edges(blurred)
-    final_lanes = apply_roi(edges)
-    
-    # Save the output images
-    cv2.imwrite("outputs/1_original.jpg", img)
-    cv2.imwrite("outputs/2_colors.jpg", colors)
-    cv2.imwrite("outputs/3_blurred.jpg", blurred)
-    cv2.imwrite("outputs/4_edges.jpg", edges)
-    cv2.imwrite("outputs/5_final_lanes.jpg", final_lanes)
-    
-    print("Done! Check the outputs folder.")
+        # Wait for user input to move to the next image
+        cv2.waitKey(0)
+        
+        # Close the current window before opening the next
+        cv2.destroyAllWindows()
+
+    print("\nAll images processed successfully! Check the outputs folder.")
